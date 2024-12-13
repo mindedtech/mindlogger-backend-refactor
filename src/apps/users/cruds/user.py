@@ -119,8 +119,26 @@ class UsersCRUD(BaseCRUD[UserSchema]):
         query = query.where(UserSchema.id.in_(ids))
         db_result = await self._execute(query)
         return db_result.scalars().all()
+    
+    async def get_user_prolific_token(self, user_id: uuid.UUID) -> str:
+        query: Query = select(UserSchema)
+        query = query.where(UserSchema.id == user_id)
+        db_result = await self._execute(query)
+        user = db_result.scalars().one_or_none()
 
-    async def get_user_or_none_by_email(self, email: str) -> UserSchema | None:
+        if not user:
+            raise UserNotFound()
+
+        return user.prolific_api_token
+    
+    async def save_user_prolific_token(self, user_id: uuid.UUID, prolific_api_token: str) -> None:
+        query: Query = update(UserSchema)
+        query = query.where(UserSchema.id == user_id)
+        # check prolific api token existance, throw if not exists
+        query = query.values(prolific_api_token=prolific_api_token if prolific_api_token else None)
+        await self._execute(query)
+
+    async def get_user_or_none_by_email(self, email: str) -> UserSchema | None:        
         email_hash = hash_sha224(email)
         user = await self._get("email", email_hash)
         return user

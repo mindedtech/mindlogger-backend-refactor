@@ -4,6 +4,7 @@ from apps.authentication.deps import get_current_user
 from apps.shared.domain.response import Response
 from apps.users.cruds.user import UsersCRUD
 from apps.users.domain import (
+    ProlificToken,
     PublicUser,
     User,
     UserCreate,
@@ -12,6 +13,7 @@ from apps.users.domain import (
     UserDeviceCreate,
     UserUpdateRequest,
 )
+from apps.users.services.prolific import ProlificService
 from apps.users.services.user import UserService
 from apps.users.services.user_device import UserDeviceService
 from apps.workspaces.service.workspace import WorkspaceService
@@ -71,3 +73,22 @@ async def user_save_device(
     async with atomic(session):
         device = await UserDeviceService(session, user.id).add_device(data)
     return Response(result=device)
+
+async def get_user_prolific_token(
+    user: User = Depends(get_current_user), 
+    session=Depends(get_session),
+) -> Response[ProlificToken]:
+    async with atomic(session):
+        prolific_api_token = await ProlificService(session).get_prolific_token(user.id)
+
+    return Response(result=prolific_api_token)
+
+async def save_user_prolific_token(
+    user: User = Depends(get_current_user), 
+    prolific_api_token: ProlificToken = Body(...), 
+    session=Depends(get_session),
+) -> None:
+    async with atomic(session):
+        prolific_api_token = await ProlificService(session).save_prolific_token(user.id, prolific_api_token)
+
+    return Response(result=None)

@@ -125,6 +125,10 @@ class UserChangePassword(InternalModel):
 
     hashed_password: str
 
+class ProlificToken(InternalModel):
+    """This model represents Prolific token linked to a ML user. Needed for Prolific API."""
+
+    api_token: str
 
 class PasswordRecoveryRequest(InternalModel):
     """This model represents password recovery request

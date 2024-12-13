@@ -20,7 +20,8 @@ from apps.users.api import (
     user_save_device,
     user_update,
 )
-from apps.users.domain import PublicUser, UserDevice
+from apps.users.api.users import get_user_prolific_token, save_user_prolific_token
+from apps.users.domain import ProlificToken, PublicUser, UserDevice
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -103,6 +104,28 @@ router.post(
 router.get(
     "/me/password/recover/healthcheck",
 )(password_recovery_healthcheck)
+
+# Get prolific api token
+router.get(
+    "/me/prolific/token",
+    response_model=Response[ProlificToken], 
+    responses={
+        status.HTTP_200_OK: {"model": Response[ProlificToken]},
+        **AUTHENTICATION_ERROR_RESPONSES,
+        **DEFAULT_OPENAPI_RESPONSE,
+    },
+)(get_user_prolific_token)
+
+# Set prolific api token
+router.post(
+    "/me/prolific/token", 
+    response_model=Response[None],
+    responses={
+        status.HTTP_200_OK: {"model": Response[None]},
+        **AUTHENTICATION_ERROR_RESPONSES,
+        **DEFAULT_OPENAPI_RESPONSE,
+    }
+)(save_user_prolific_token)
 
 router.get(
     "/me/subjects/{applet_id}",
