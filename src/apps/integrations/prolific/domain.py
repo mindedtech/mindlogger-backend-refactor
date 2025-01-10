@@ -3,6 +3,7 @@ import json
 from pydantic import BaseModel
 
 from apps.integrations.db.schemas import IntegrationsSchema
+from apps.shared.domain.base import InternalModel
 
 
 class ProlificIntegration(BaseModel):
@@ -15,3 +16,7 @@ class ProlificIntegration(BaseModel):
 
     def __repr__(self):
         return "ProlificIntegration()"
+class ProlificAnswerStudyContext(InternalModel):
+    prolific_pid: str
+    session_id: str
+    study_id: str

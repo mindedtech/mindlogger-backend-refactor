@@ -28,6 +28,7 @@ class SubjectsCrud(BaseCRUD[SubjectSchema]):
         return await self._update_one("id", schema.id, schema)
 
     async def update_by_id(self, id_, **values):
+        print(values)
         query = (
             update(self.schema_class).where(self.schema_class.id == id_).values(**values).returning(self.schema_class)
         )

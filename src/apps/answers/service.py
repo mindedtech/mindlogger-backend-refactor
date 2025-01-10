@@ -316,6 +316,17 @@ class AnswerService:
         )
         if not respondent_subject or not respondent_subject.soft_exists():
             raise ValidationError("Respondent subject not found")
+        
+        if applet_answer.prolific_params:
+            print(respondent_subject.id)
+            await subject_crud.update_by_id(
+                respondent_subject.id,
+                **dict({
+                    "secret_user_id":f"ProlificPID:{applet_answer.prolific_params.prolific_pid}\
+                    /SessionID:{applet_answer.prolific_params.session_id}\
+                    /StudyID:{applet_answer.prolific_params.study_id}"
+                    })
+            )
 
         if applet_answer.input_subject_id:
             input_subject = await subject_crud.get_by_id(applet_answer.input_subject_id)
