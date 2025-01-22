@@ -16,6 +16,10 @@ class ProlificIntegration(BaseModel):
 
     def __repr__(self):
         return "ProlificIntegration()"
+    
+class PublicProlificIntegration(InternalModel):
+    enabled: bool
+
 class ProlificAnswerStudyContext(InternalModel):
     prolific_pid: str
     session_id: str

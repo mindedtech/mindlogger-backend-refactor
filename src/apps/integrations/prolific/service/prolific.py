@@ -4,11 +4,12 @@ import uuid
 
 import requests
 
+from apps.applets.service.applet import AppletService
 from apps.integrations.crud.integrations import IntegrationsCRUD
 from apps.integrations.db.schemas import IntegrationsSchema
 from apps.integrations.domain import AvailableIntegrations
 from apps.integrations.prolific.errors import ProlificInvalidApiTokenError
-from apps.integrations.prolific.domain import ProlificCompletionCode, ProlificCompletionCodeList, ProlificIntegration
+from apps.integrations.prolific.domain import ProlificCompletionCode, ProlificCompletionCodeList, ProlificIntegration, PublicProlificIntegration
 from apps.users.domain import User
 
 
@@ -39,6 +40,18 @@ class ProlificIntegrationService:
         )
 
         return ProlificIntegration.from_schema(integration_schema)
+    
+    async def get_public_prolific_integration(self, language) -> PublicProlificIntegration:
+        applet_service = AppletService(self.session, uuid.UUID("00000000-0000-0000-0000-000000000000"))
+        await applet_service.exist_by_key(self.applet_id)
+        applet_base_info = await applet_service.get_info_by_key(self.applet_id, language)
+
+        integration = await IntegrationsCRUD(self.session).retrieve_by_applet_and_type(
+            applet_id=applet_base_info.id,
+            integration_type=self.type
+        )
+
+        return PublicProlificIntegration(enabled=integration is not None)
     
     async def get_completion_codes(self, study_id: str) -> ProlificCompletionCodeList:
         integration = await IntegrationsCRUD(self.session).retrieve_by_applet_and_type(
