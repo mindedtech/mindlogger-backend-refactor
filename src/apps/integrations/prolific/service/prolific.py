@@ -14,10 +14,9 @@ from apps.users.domain import User
 
 
 class ProlificIntegrationService:
-    def __init__(self, applet_id: uuid.UUID, session, user: User = None) -> None:
+    def __init__(self, applet_id: uuid.UUID, session) -> None:
         self.applet_id = applet_id
         self.session = session
-        self.user = user
         self.type = AvailableIntegrations.PROLIFIC
 
     async def create_prolific_integration(self, api_key: str) -> ProlificIntegration:
@@ -72,12 +71,9 @@ class ProlificIntegrationService:
             raise HTTPException(status_code=prolific_response.status_code, detail=prolific_response.detail)
 
         prolific_completion_codes = prolific_response.json()["completion_codes"]
-        print(prolific_completion_codes)
+
         completion_codes = []
         for code in prolific_completion_codes:
             completion_codes.append(ProlificCompletionCode(code=code["code"], code_type=code["code_type"], actions=code["actions"], actor=code["actor"]))
 
-        print(completion_codes)
-        tmp =  ProlificCompletionCodeList(completion_codes=prolific_response.json()["completion_codes"])
-        print(tmp)
-        return tmp
+        return ProlificCompletionCodeList(completion_codes=prolific_response.json()["completion_codes"])
