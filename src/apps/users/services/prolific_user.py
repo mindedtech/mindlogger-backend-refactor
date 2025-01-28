@@ -1,5 +1,7 @@
 import hashlib
 import uuid
+
+from fastapi import HTTPException
 from apps.applets.crud.applets import AppletsCRUD
 from apps.authentication.services.security import AuthenticationService
 from apps.integrations.prolific.domain import ProlificAnswerParams
@@ -26,22 +28,23 @@ class ProlificUserService:
 
         prolific_respondent = await crud.get_prolific_respondent(prolific_respondent_id)
         if not prolific_respondent:
-            email = f"{self.prolific_pid}-{self.prolific_session_id}{settings.prolific_respondent.email}"
             prolific_respondent = UserSchema(
                 id=prolific_respondent_id,
-                email=hash_sha224(email),
+                email=hash_sha224(self.__get_formated_email()),
                 first_name=settings.prolific_respondent.first_name,
                 last_name=settings.prolific_respondent.last_name,
                 hashed_password=AuthenticationService(self.session).get_password_hash(
                     settings.anonymous_respondent.password
                 ),
-                email_encrypted=email,
+                email_encrypted=self.__get_formated_email(),
                 is_prolific_respondent=True,
             )
 
             return await crud.save(prolific_respondent)
-        
-        return prolific_respondent
+
+        # As the id is generated from the prolific_pid and prolific_session_id
+        # that means the user already answered the survey with the session_id
+        raise HTTPException(status_code=400, detail="User already answered the survey")
     
     async def create_subject_for_prolific_respondent(self, prolific_respondent: UserSchema, applet_id: uuid.UUID) -> None:
         subject_service = SubjectsService(self.session, prolific_respondent.id)
@@ -56,9 +59,14 @@ class ProlificUserService:
                     user_id=prolific_respondent.id,
                     first_name=prolific_respondent.first_name,
                     last_name=prolific_respondent.last_name,
-                    secret_user_id=settings.anonymous_respondent.secret_user_id,
-                    email=settings.anonymous_respondent.email,
+                    secret_user_id=self.__get_formated_secret_user_id(),
+                    email=self.__get_formated_email(),
                     nickname=f"ProlificPID={self.prolific_pid}/SessionID={self.prolific_session_id}/StudyID={self.prolific_study_id}"
                 )
             )
-        # else: Do nothing, subject already exists
+
+    def __get_formated_email(self):
+        return f"{self.prolific_pid}-{self.prolific_session_id}{settings.prolific_respondent.email}"
+    
+    def __get_formated_secret_user_id(self):
+        return f"{settings.prolific_respondent.secret_user_id}{self.prolific_pid}-{self.prolific_study_id}-{self.prolific_session_id}"

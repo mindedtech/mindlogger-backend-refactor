@@ -135,7 +135,7 @@ class AnswerService:
         return key_generator
 
     async def create_answer(self, activity_answer: AppletAnswerCreate) -> AnswerSchema:
-        if self.user_id:
+        if self.user_id and activity_answer.prolific_params == None:
             return await self._create_respondent_answer(activity_answer)
         else:
             return await self._create_anonymous_answer(activity_answer)
@@ -316,16 +316,6 @@ class AnswerService:
         )
         if not respondent_subject or not respondent_subject.soft_exists():
             raise ValidationError("Respondent subject not found")
-        
-        if applet_answer.prolific_params:
-            await subject_crud.update_by_id(
-                respondent_subject.id,
-                **dict({
-                    "secret_user_id":f"ProlificPID:{applet_answer.prolific_params.prolific_pid}\
-                    /SessionID:{applet_answer.prolific_params.session_id}\
-                    /StudyID:{applet_answer.prolific_params.study_id}"
-                    })
-            )
 
         if applet_answer.input_subject_id:
             input_subject = await subject_crud.get_by_id(applet_answer.input_subject_id)

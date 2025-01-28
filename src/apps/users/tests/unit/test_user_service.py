@@ -6,6 +6,7 @@ from pydantic import EmailStr
 from sqlalchemy import true
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from apps.integrations.prolific.domain import ProlificAnswerParams
 from apps.shared.hashing import hash_sha224
 from apps.users.cruds.user import UsersCRUD
 from apps.users.db.schemas import UserSchema
@@ -96,11 +97,7 @@ async def test_create_prolific_respondent(session: AsyncSession):
     crud = UsersCRUD(session)
     await crud._delete(is_prolific_respondent=true())
     
-    srv = ProlificUserService(session, {
-            "prolific_pid": "prolific_respondent_id",
-            "session_id": "prolific_session_id",
-            "study_id": "prolific_study_id",
-        })
+    srv = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id", study_id="prolific_study_id"))
     prolific_respondent = await srv.get_or_create_prolific_respondent()
     assert prolific_respondent.is_prolific_respondent
     assert prolific_respondent.email_encrypted == f"{srv.prolific_pid}-{srv.prolific_session_id}{settings.prolific_respondent.email}"
@@ -108,16 +105,9 @@ async def test_create_prolific_respondent(session: AsyncSession):
     assert prolific_respondent.last_name == settings.prolific_respondent.last_name
 
 async def test_create_prolific_respondent__created_only_once(session: AsyncSession):
-    srv1 = ProlificUserService(session, {
-            "prolific_pid": "prolific_respondent_id",
-            "session_id": "prolific_session_id",
-            "study_id": "prolific_study_id",
-        })
-    srv2 = ProlificUserService(session, {
-            "prolific_pid": "prolific_respondent_id",
-            "session_id": "prolific_session_id",
-            "study_id": "prolific_study_id",
-        })
+    srv1 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id", study_id="prolific_study_id"))
+    srv2 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id", study_id="prolific_study_id"))
+
     await srv1.get_or_create_prolific_respondent()
     await srv2.get_or_create_prolific_respondent()
     crud = UsersCRUD(session)
@@ -125,16 +115,8 @@ async def test_create_prolific_respondent__created_only_once(session: AsyncSessi
     assert count == 1
 
 async def test_create_two_different_sessions_prolific_respondent(session: AsyncSession):
-    srv1 = ProlificUserService(session, {
-            "prolific_pid": "prolific_respondent_id",
-            "session_id": "prolific_session_id-1",
-            "study_id": "prolific_study_id",
-        })
-    srv2 = ProlificUserService(session, {
-            "prolific_pid": "prolific_respondent_id",
-            "session_id": "prolific_session_id-2",
-            "study_id": "prolific_study_id",
-        })
+    srv1 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id-1", study_id="prolific_study_id"))
+    srv2 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id-2", study_id="prolific_study_id"))
 
     await srv1.get_or_create_prolific_respondent()
     await srv2.get_or_create_prolific_respondent()
