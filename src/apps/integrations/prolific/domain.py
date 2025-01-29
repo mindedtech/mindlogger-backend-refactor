@@ -20,7 +20,7 @@ class ProlificIntegration(BaseModel):
 class PublicProlificIntegration(InternalModel):
     enabled: bool
 
-class ProlificAnswerStudyContext(InternalModel):
+class ProlificParamsActivityAnswer(InternalModel):
     prolific_pid: str
     session_id: str
     study_id: str

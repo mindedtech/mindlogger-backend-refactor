@@ -318,7 +318,6 @@ class AnswerService:
             raise ValidationError("Respondent subject not found")
         
         if applet_answer.prolific_params:
-            print(respondent_subject.id)
             await subject_crud.update_by_id(
                 respondent_subject.id,
                 **dict({

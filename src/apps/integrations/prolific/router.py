@@ -10,8 +10,8 @@ from apps.shared.domain.response.errors import AUTHENTICATION_ERROR_RESPONSES, D
 router = APIRouter(prefix="/integrations/prolific", tags=["Prolific"])
 
 router.get(
-    "/applet/{applet_id}",
-    description="This endpoint is used to get get the prolific configuration for an applet",
+    "/applet/{applet_id}/study_id/{study_id}",
+    description="This endpoint is used to get the prolific configuration for an applet",
     response_model=None,
     status_code=status.HTTP_200_OK,
     responses={
@@ -23,7 +23,7 @@ router.get(
 
 router.get(
     "/applet/{applet_id}/completion_codes/{study_id}",
-    description="This endpoint is used to get completion codes for a study",
+    description="This endpoint is used to get the list of completion codes for a given study",
     response_model=None,
     status_code=status.HTTP_200_OK,
     responses={
