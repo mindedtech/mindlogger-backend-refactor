@@ -10,10 +10,10 @@ from apps.applets.service.applet import AppletService
 from apps.integrations.crud.integrations import IntegrationsCRUD
 from apps.integrations.db.schemas import IntegrationsSchema
 from apps.integrations.domain import AvailableIntegrations
-from apps.integrations.prolific.errors import ProlificInvalidApiTokenError
+from apps.integrations.prolific.errors import ProlificIntegrationNotConfiguredError, ProlificInvalidApiTokenError, ProlificInvalidStudyError
 from apps.integrations.prolific.domain import ProlificCompletionCode, ProlificCompletionCodeList, ProlificIntegration, PublicProlificIntegration
 
-PROLIFIC_API_BASE_URL = "https://api.prolific.com/api/v1"
+API_BASE_URL = "https://api.prolific.com/api/v1"
 BASE_HEADERS = {"Content-Type": "application/json"}
 
 class ProlificIntegrationService:
@@ -24,7 +24,7 @@ class ProlificIntegrationService:
 
     async def create_prolific_integration(self, api_key: str) -> ProlificIntegration:
         prolific_response = requests.get(
-            f"{PROLIFIC_API_BASE_URL}/users/me/",
+            f"{API_BASE_URL}/users/me/",
             headers={
                     **BASE_HEADERS,
                     "Authorization": f"Token {api_key}"
@@ -52,27 +52,30 @@ class ProlificIntegrationService:
 
         api_key = await self._get_prolific_api_key()
 
+        if not api_key:
+            return PublicProlificIntegration(enabled=False)
+
         prolific_response = requests.get(
-            f"{PROLIFIC_API_BASE_URL}/studies/{study_id}/",
+            f"{API_BASE_URL}/studies/{study_id}/",
             headers={
                 **BASE_HEADERS,
                 "Authorization": f"Token {api_key}"
             })
 
-        return PublicProlificIntegration(enabled=(api_key is not None and prolific_response.status_code == 200))
+        return PublicProlificIntegration(enabled=(prolific_response.status_code == 200))
     
     async def get_completion_codes(self, study_id: str) -> ProlificCompletionCodeList:
         api_key = await self._get_prolific_api_key()
 
         prolific_response = requests.get(
-            f"{PROLIFIC_API_BASE_URL}/studies/{study_id}/",
+            f"{API_BASE_URL}/studies/{study_id}/",
             headers={
                 **BASE_HEADERS,
                 "Authorization": f"Token {api_key}"
             })
         
         if (prolific_response.status_code != 200):
-            raise HTTPException(status_code=prolific_response.status_code, detail=prolific_response.detail)
+            raise ProlificInvalidStudyError(detail=prolific_response.detail)
 
         return ProlificCompletionCodeList(completion_codes=prolific_response.json()["completion_codes"])
 
@@ -88,4 +91,4 @@ class ProlificIntegrationService:
         try:
             return ProlificIntegration(**json.loads(integration.configuration)).api_key
         except ValidationError:
-            raise HTTPException(status_code=400, detail="Prolific integration is not configured")
+            raise ProlificIntegrationNotConfiguredError()
