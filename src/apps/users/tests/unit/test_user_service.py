@@ -98,9 +98,9 @@ async def test_create_prolific_respondent(session: AsyncSession):
     await crud._delete(is_prolific_respondent=true())
     
     srv = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id", study_id="prolific_study_id"))
-    prolific_respondent = await srv.get_or_create_prolific_respondent()
+    prolific_respondent = await srv.create_prolific_respondent()
     assert prolific_respondent.is_prolific_respondent
-    assert prolific_respondent.email_encrypted == f"{srv.prolific_pid}-{srv.prolific_session_id}{settings.prolific_respondent.email}"
+    assert prolific_respondent.email_encrypted == f"{srv.prolific_pid}-{srv.prolific_session_id}{settings.prolific_respondent.domain}"
     assert prolific_respondent.first_name == settings.prolific_respondent.first_name
     assert prolific_respondent.last_name == settings.prolific_respondent.last_name
 
@@ -108,8 +108,8 @@ async def test_create_prolific_respondent__created_only_once(session: AsyncSessi
     srv1 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id", study_id="prolific_study_id"))
     srv2 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id", study_id="prolific_study_id"))
 
-    await srv1.get_or_create_prolific_respondent()
-    await srv2.get_or_create_prolific_respondent()
+    await srv1.create_prolific_respondent()
+    await srv2.create_prolific_respondent()
     crud = UsersCRUD(session)
     count = await crud.count(is_prolific_respondent=True)
     assert count == 1
@@ -118,8 +118,8 @@ async def test_create_two_different_sessions_prolific_respondent(session: AsyncS
     srv1 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id-1", study_id="prolific_study_id"))
     srv2 = ProlificUserService(session, ProlificAnswerParams(prolific_pid="prolific_respondent_id", session_id="prolific_session_id-2", study_id="prolific_study_id"))
 
-    await srv1.get_or_create_prolific_respondent()
-    await srv2.get_or_create_prolific_respondent()
+    await srv1.create_prolific_respondent()
+    await srv2.create_prolific_respondent()
     crud = UsersCRUD(session)
     count = await crud.count(is_prolific_respondent=True)
     assert count == 2

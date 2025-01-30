@@ -4,7 +4,7 @@ import uuid
 from fastapi import HTTPException
 from apps.applets.crud.applets import AppletsCRUD
 from apps.authentication.services.security import AuthenticationService
-from apps.integrations.prolific.domain import ProlificAnswerParams
+from apps.integrations.prolific.domain import ProlificParamsActivityAnswer
 from apps.shared.hashing import hash_sha224
 from apps.subjects.domain import SubjectCreate
 from apps.subjects.services.subjects import SubjectsService
@@ -13,15 +13,15 @@ from apps.users.db.schemas import UserSchema
 from config import settings
 
 class ProlificUserService:
-    def __init__(self, session, prolific_participant: ProlificAnswerParams) -> None:
+    def __init__(self, session, prolific_participant: ProlificParamsActivityAnswer) -> None:
         self.session = session
         self.prolific_pid = prolific_participant.prolific_pid
         self.prolific_session_id = prolific_participant.session_id
         self.prolific_study_id = prolific_participant.study_id
         
 
-    async def get_or_create_prolific_respondent(self) -> UserSchema:
-        hash_object = hashlib.sha256(f"{self.prolific_pid}-{self.prolific_session_id}".encode('utf-8'))
+    async def create_prolific_respondent(self) -> UserSchema:
+        hash_object = hashlib.sha256(f"{self.prolific_pid}-{self.prolific_study_id}".encode('utf-8'))
         prolific_respondent_id = uuid.UUID(hash_object.hexdigest()[:32])
 
         crud = UsersCRUD(self.session)
@@ -30,13 +30,13 @@ class ProlificUserService:
         if not prolific_respondent:
             prolific_respondent = UserSchema(
                 id=prolific_respondent_id,
-                email=hash_sha224(self.__get_formated_email()),
+                email=hash_sha224(self._get_formated_email()),
                 first_name=settings.prolific_respondent.first_name,
                 last_name=settings.prolific_respondent.last_name,
                 hashed_password=AuthenticationService(self.session).get_password_hash(
                     settings.anonymous_respondent.password
                 ),
-                email_encrypted=self.__get_formated_email(),
+                email_encrypted=self._get_formated_email(),
                 is_prolific_respondent=True,
             )
 
@@ -59,14 +59,15 @@ class ProlificUserService:
                     user_id=prolific_respondent.id,
                     first_name=prolific_respondent.first_name,
                     last_name=prolific_respondent.last_name,
-                    secret_user_id=self.__get_formated_secret_user_id(),
-                    email=self.__get_formated_email(),
-                    nickname=f"ProlificPID={self.prolific_pid}/SessionID={self.prolific_session_id}/StudyID={self.prolific_study_id}"
+                    secret_user_id=self._get_formated_secret_user_id(),
+                    email=self._get_formated_email(),
+                    # Storing prolific params as JSON for easy parse.
+                    nickname=ProlificParamsActivityAnswer(prolific_pid=self.prolific_pid, session_id=self.prolific_session_id, study_id=self.prolific_study_id).json(),
                 )
             )
 
-    def __get_formated_email(self):
-        return f"{self.prolific_pid}-{self.prolific_session_id}{settings.prolific_respondent.email}"
+    def _get_formated_email(self):
+        return f"{self.prolific_pid}-{self.prolific_session_id}@{settings.prolific_respondent.domain}"
     
-    def __get_formated_secret_user_id(self):
+    def _get_formated_secret_user_id(self):
         return f"{settings.prolific_respondent.secret_user_id}{self.prolific_pid}-{self.prolific_study_id}-{self.prolific_session_id}"

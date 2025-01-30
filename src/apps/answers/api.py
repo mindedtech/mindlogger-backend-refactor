@@ -100,7 +100,7 @@ async def create_anonymous_answer(
         respondent = None
         if schema.prolific_params:
             service = ProlificUserService(session, schema.prolific_params)
-            respondent = await service.get_or_create_prolific_respondent()
+            respondent = await service.create_prolific_respondent()
 
             await (
                 service.create_subject_for_prolific_respondent(
